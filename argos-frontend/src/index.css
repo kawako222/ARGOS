@@ -1,0 +1,32 @@
+/* src/index.css */
+@import "tailwindcss";
+
+@theme {
+  --color-argos-gold: #d4af37; /* Un dorado elegante para acentos */
+  --color-argos-dark: #1a1a1a; /* Negro suave */
+  --font-serif: "Playfair Display", serif; /* Fuente elegante para títulos */
+  --font-sans: "Inter", sans-serif; /* Fuente limpia para texto */
+}
+
+/* Importar estilos del carrusel */
+@import 'slick-carousel/slick/slick.css';
+@import 'slick-carousel/slick/slick-theme.css';
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-argos-dark);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-serif);
+}
+
+/* Ajustes para los puntos del carrusel */
+.slick-dots li button:before {
+  color: white !important;
+  opacity: 0.5;
+}
+.slick-dots li.slick-active button:before {
+    color: var(--color-argos-gold) !important;
+    opacity: 1;
+}
