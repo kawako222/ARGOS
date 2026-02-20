@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'; 
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User, Calendar, Users, Briefcase, CreditCard, Wallet, LayoutDashboard } from 'lucide-react'; 
+import { LogOut, User, Calendar, Users, Briefcase, CreditCard, Wallet, LayoutDashboard, ClipboardCheck } from 'lucide-react'; 
 
 // Importación de Componentes
 import UsersTable from '../components/UsersTable'; 
@@ -10,9 +10,10 @@ import MonthlyCalendar from '../components/MonthlyCalendar';
 import TeachersTable from '../components/TeachersTable';
 import UserProfile from '../components/UserProfile';
 import StudentPayments from '../components/StudentPayments';
-import FinancePage from '../components/FinancePage'; // Nuevo
-import TeacherDashboard from '../components/TeacherDashboard'; // Nuevo
-
+import FinancePage from '../components/FinancePage'; 
+import TeacherDashboard from '../components/TeacherDashboard'; 
+import TeacherPayments from '../components/TeacherPayments'; 
+import AttendanceTable from '../components/AttendanceTable';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -54,20 +55,49 @@ const DashboardPage = () => {
           <img src="/img/argos_logo.png" alt="Argos" className="h-12 mx-auto object-contain" />
         </div>
         
-        <nav className="flex-1 p-4 space-y-2">
-          {/* Inicio (Para todos) */}
-          <button 
-            onClick={() => setActiveTab('home')}
-            className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-              activeTab === 'home' ? 'bg-yellow-50 text-yellow-700' : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            <Calendar size={20} /> Inicio
-          </button>
+        <nav className="flex-1 p-4 flex flex-col gap-2">
+          
+          {/* ======================================= */}
+          {/* 1. SECCIÓN PRINCIPAL (Para todos)         */}
+          {/* ======================================= */}
+          <div className="space-y-2">
+            <button 
+              onClick={() => setActiveTab('home')}
+              className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                activeTab === 'home' ? 'bg-yellow-50 text-yellow-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {userRole === 'MAESTRO' ? <LayoutDashboard size={20} /> : <Calendar size={20} />} 
+              {userRole === 'MAESTRO' ? 'Mi Panel Docente' : 'Inicio'}
+            </button>
 
-          {/* MENÚ EXCLUSIVO PARA ADMIN */}
+            {/* 👇 FINANZAS DEL MAESTRO: Agrupado con Inicio y Perfil 👇 */}
+            {userRole === 'MAESTRO' && (
+              <button 
+                onClick={() => setActiveTab('teacher_finances')}
+                className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                  activeTab === 'teacher_finances' ? 'bg-yellow-50 text-yellow-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <Wallet size={20} /> Mis Finanzas
+              </button>
+            )}
+
+            <button 
+              onClick={() => setActiveTab('profile')}
+              className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                activeTab === 'profile' ? 'bg-yellow-50 text-yellow-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <User size={20} /> Mi Perfil
+            </button>
+          </div>
+
+          {/* ======================================= */}
+          {/* 2. SECCIÓN: GESTIÓN ADMIN                 */}
+          {/* ======================================= */}
           {userRole === 'ADMIN' && (
-            <div className="pt-4 mt-4 border-t border-gray-100 space-y-1">
+            <div className="pt-4 mt-2 border-t border-gray-100 space-y-2">
               <p className="px-4 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                 Gestión Argos
               </p>
@@ -80,39 +110,39 @@ const DashboardPage = () => {
               <button onClick={() => setActiveTab('teachers')} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${activeTab === 'teachers' ? 'bg-yellow-50 text-yellow-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}>
                 <Briefcase size={20} /> Profesores
               </button>
-              {/* 👇 Nuevo botón de Finanzas */}
               <button onClick={() => setActiveTab('finances')} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${activeTab === 'finances' ? 'bg-yellow-50 text-yellow-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}>
                 <Wallet size={20} /> Finanzas
+              </button>
+              <button onClick={() => setActiveTab('attendance')} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${activeTab === 'attendance' ? 'bg-yellow-50 text-yellow-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}>
+                <ClipboardCheck size={20} /> Asistencias
               </button>
             </div>
           )}
 
-          {/* MENÚ EXCLUSIVO PARA ALUMNAS */}
+          {/* ======================================= */}
+          {/* 3. SECCIÓN: MI ACADEMIA (ALUMNAS)         */}
+          {/* ======================================= */}
           {userRole === 'ALUMNA' && (
-            <button 
-              onClick={() => setActiveTab('payments')}
-              className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                activeTab === 'payments' ? 'bg-yellow-50 text-yellow-700' : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <CreditCard size={20} /> Mis Pagos
-            </button>
+            <div className="pt-4 mt-2 border-t border-gray-100 space-y-2">
+              <p className="px-4 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                Mi Academia
+              </p>
+              <button 
+                onClick={() => setActiveTab('payments')}
+                className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                  activeTab === 'payments' ? 'bg-yellow-50 text-yellow-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <CreditCard size={20} /> Mis Pagos
+              </button>
+            </div>
           )}
 
-          {/* Perfil (Para todos) */}
-          <button 
-            onClick={() => setActiveTab('profile')}
-            className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors mt-4 border-t border-gray-100 pt-4 ${
-              activeTab === 'profile' ? 'bg-yellow-50 text-yellow-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            <User size={20} /> Mi Perfil
-          </button>
         </nav>
 
         {/* CERRAR SESIÓN */}
         <div className="p-4 border-t border-gray-100">
-          <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+          <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200">
             <LogOut size={20} /> Cerrar Sesión
           </button>
         </div>
@@ -122,18 +152,23 @@ const DashboardPage = () => {
       <main className="flex-1 overflow-y-auto">
         <header className="bg-white shadow-sm h-16 flex items-center justify-between px-8 sticky top-0 z-10">
           <h1 className="text-xl font-serif font-bold text-gray-800 uppercase tracking-tight">
-            {activeTab === 'home' && 'Panel de Control'}
+            {activeTab === 'home' && userRole === 'ADMIN' && 'Panel de Control'}
+            {activeTab === 'home' && userRole === 'MAESTRO' && 'Panel Docente'}
+            {activeTab === 'home' && userRole === 'ALUMNA' && 'Mi Academia'}
             {activeTab === 'users' && 'Gestión de Alumnas'}
             {activeTab === 'courses' && 'Catálogo de Clases'}
             {activeTab === 'teachers' && 'Cuerpo Docente'}
             {activeTab === 'finances' && 'Contabilidad y Finanzas'}
+            {activeTab === 'payments' && 'Historial de Pagos'}
             {activeTab === 'profile' && 'Configuración de Perfil'}
+            {activeTab === 'teacher_finances' && 'Mis Finanzas'} 
+            {activeTab === 'attendance' && 'Bitácora de Asistencias'}
           </h1>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-500">
               Hola, <span className="font-bold text-gray-900">{displayName}</span>
             </span>
-            <div className="h-10 w-10 bg-gray-900 text-white rounded-full flex items-center justify-center font-bold border-2 border-yellow-500">
+            <div className="h-10 w-10 bg-gray-900 text-white rounded-full flex items-center justify-center font-bold border-2 border-yellow-500 shadow-sm">
               {initial}
             </div>
           </div>
@@ -141,13 +176,9 @@ const DashboardPage = () => {
 
         <div className="p-8">
           
-          {/* ======================================= */}
-          {/* VISTA: INICIO (HOME) DEPENDIENDO DEL ROL */}
-          {/* ======================================= */}
           {activeTab === 'home' && (
             <div className="space-y-8">
               
-              {/* VISTA HOME: ALUMNA */}
               {userRole === 'ALUMNA' && (
                 <>
                   <StudentStats key={refreshKey} />
@@ -161,12 +192,10 @@ const DashboardPage = () => {
                 </>
               )}
 
-              {/* 👇 VISTA HOME: MAESTRO */}
               {userRole === 'MAESTRO' && (
                 <TeacherDashboard />
               )}
 
-              {/* VISTA HOME: ADMIN */}
               {userRole === 'ADMIN' && (
                 <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center h-[50vh]">
                   <div className="w-20 h-20 bg-yellow-50 rounded-full flex items-center justify-center text-yellow-600 mb-6">
@@ -181,17 +210,18 @@ const DashboardPage = () => {
             </div>
           )}
 
-          {/* ======================================= */}
-          {/* VISTAS EXCLUSIVAS                       */}
-          {/* ======================================= */}
           {activeTab === 'users' && userRole === 'ADMIN' && <UsersTable />}
           {activeTab === 'courses' && userRole === 'ADMIN' && <CoursesTable />}
           {activeTab === 'teachers' && userRole === 'ADMIN' && <TeachersTable />}
-          {activeTab === 'finances' && userRole === 'ADMIN' && <FinancePage />} {/* 👇 Nuevo */}
+          {activeTab === 'finances' && userRole === 'ADMIN' && <FinancePage />} 
+          {activeTab === 'attendance' && userRole === 'ADMIN' && <AttendanceTable />}
           
           {activeTab === 'payments' && userRole === 'ALUMNA' && <StudentPayments userId={user.id} />}
           
           {activeTab === 'profile' && <UserProfile />}
+
+          {/* 👇 RENDERIZADO DEL NUEVO COMPONENTE 👇 */}
+          {activeTab === 'teacher_finances' && userRole === 'MAESTRO' && <TeacherPayments />}
         </div>
       </main>
     </div>

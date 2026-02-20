@@ -5,8 +5,22 @@ const RecargaModal = ({ isOpen, onClose, onConfirm, userPlan }) => {
   // Inicializamos el estado directamente usando el prop userPlan.
   // Gracias a la 'key' en el padre, este componente se "resetea" 
   // con nuevos valores cada vez que se abre o cambia de alumna.
-  const [amount, setAmount] = useState(userPlan === 'Paquete 2' ? '1100' : '800');
-  const [tokens, setTokens] = useState(userPlan === 'Paquete 2' ? '12' : '8');
+  const PLAN_CONFIG = {
+    'Paquete 1':   { price: '1100', tokens: 8 },
+    'Paquete 2':   { price: '1300',  tokens: 12  },
+    'Infantil':   { price: '1400',  tokens: 8  }, // Ejemplo Infantil
+    'Inter-adv':   { price: '1550', tokens: 100 }, // Ejemplo Inter-adv
+    'Personalizado': { price: 'beca',    tokens: 100  }, // Por si no tiene plan
+    'default':     { price: '1100',  tokens: 8  }  // Lo que sale si algo falla
+  };
+
+  // 2. Buscamos la configuración del alumno actual
+  // Si el plan no existe en el objeto, usamos el 'default'
+  const currentConfig = PLAN_CONFIG[userPlan] || PLAN_CONFIG['default'];
+
+  // 3. Inicializamos los estados con la configuración encontrada
+  const [amount, setAmount] = useState(currentConfig.price);
+  const [tokens, setTokens] = useState(currentConfig.tokens);
 
   if (!isOpen) return null;
 

@@ -12,4 +12,12 @@ router.post('/', courseController.createCourse);
 router.put('/:id', courseController.updateCourse);
 router.delete('/:id', courseController.deleteCourse);
 
+// 1. Obtener la lista de alumnas inscritas en una clase específica
+router.get('/:id/students', courseController.getCourseStudents);
+
+// 2. Marcar o quitar la asistencia u obtener
+router.post('/attendance', courseController.toggleAttendance);
+router.post('/finalize-attendance', courseController.finalizeAttendance);
+router.get('/all-attendance', courseController.getAttendanceReport);
+
 module.exports = router;
