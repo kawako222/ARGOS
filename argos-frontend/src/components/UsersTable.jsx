@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   User, Ruler, Award, CreditCard, Save, X, Plus, 
-  KeyRound, Copy, Pencil, Mail, ShieldCheck, History, DollarSign 
+  KeyRound, Copy, Pencil, Mail, ShieldCheck, History, DollarSign, Trash2 // 👈 Añadí Trash2
 } from 'lucide-react';
 import SuccessModal from './SuccessModal';
 import ConfirmModal from './ConfirmModal'; 
-import RecargaModal from './RecargaModal';
+import RecargaModal from './RecargarModal';
 
 const UsersTable = () => {
   const [users, setUsers] = useState([]);
@@ -47,7 +47,6 @@ const UsersTable = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // CORRECCIÓN: Nombre de función sincronizado con el botón del JSX
   const handleQuickTuition = () => {
     setShowRecargaModal(true);
   };
@@ -74,7 +73,7 @@ const UsersTable = () => {
         setModalMessage(`¡Mensualidad de ${currentMonth} cobrada! Se recargaron ${coinsToGive} monedas a ${selectedUser.name}. ✨`);
         setShowSuccessModal(true);
         fetchPayments(selectedUser.id);
-        fetchData(); // Refrescar tabla para ver nuevos balances si existen
+        fetchData(); 
       }
     } catch (err) { console.error(err); }
   };
@@ -130,6 +129,33 @@ const UsersTable = () => {
     } catch (err) { console.error(err); }
   };
 
+  // =========================================
+  // 👇 NUEVO: HANDLER PARA ELIMINAR ALUMNA 👇
+  // =========================================
+  const handleDeleteUser = async () => {
+    const confirmDelete = window.confirm(`¿Estás seguro de que deseas dar de baja permanentemente a la alumna ${selectedUser.name}? Se perderá todo su historial de pagos y medidas.`);
+    if (!confirmDelete) return;
+
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`http://localhost:3000/api/users/${selectedUser.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (res.ok) {
+        setModalMessage(`El expediente de ${selectedUser.name} ha sido eliminado. 🗑️`);
+        setShowSuccessModal(true);
+        fetchData(); // Refresca la tabla
+        setSelectedUser(null); // Cierra el panel lateral
+      } else {
+        alert("No se pudo eliminar a la alumna. Es posible que tenga registros bloqueando la acción.");
+      }
+    } catch (err) {
+      console.error("Error al eliminar alumna:", err);
+    }
+  };
+
   const handleAddPayment = async () => {
     const token = localStorage.getItem('token');
     try {
@@ -171,7 +197,6 @@ const UsersTable = () => {
         message={modalMessage} 
       />
 
-      {/* CORRECCIÓN: Se añade 'key' para evitar el error de setState en el efecto del modal */}
       <RecargaModal 
         key={selectedUser ? `recarga-${selectedUser.id}-${showRecargaModal}` : 'recarga-none'}
         isOpen={showRecargaModal} 
@@ -296,8 +321,8 @@ const UsersTable = () => {
           <div className="p-8 overflow-y-auto flex-1 space-y-6">
             
             {activeProfileTab === 'expediente' && (
-              <div className="space-y-6 animate-in fade-in duration-300">
-                <div className="space-y-4">
+              <div className="space-y-6 animate-in fade-in duration-300 flex flex-col h-full">
+                <div className="space-y-4 flex-1">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b pb-1">Datos de Acceso</p>
                   <div>
                     <label className="text-[10px] font-bold text-gray-500 block mb-1">Nombre Completo</label>
@@ -324,6 +349,8 @@ const UsersTable = () => {
                         <option value="">Sin asignar...</option>
                         <option value="Paquete 1">Paquete 1</option>
                         <option value="Paquete 2">Paquete 2</option>
+                        <option value="Paquete 3">Infantil</option>
+                        <option value="Paquete 4">Inter-adv</option>
                       </select>
                     </div>
                     <div>
@@ -345,9 +372,22 @@ const UsersTable = () => {
                   </div>
                 </div>
 
+                {/* BOTÓN DE ACTUALIZAR */}
                 <button onClick={handleUpdateUser} className="w-full bg-gray-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-argos-gold transition-all shadow-xl mt-4">
                   <ShieldCheck size={18}/> Actualizar Expediente
                 </button>
+
+                {/* 👇 NUEVA SECCIÓN: ZONA DE PELIGRO PARA ALUMNAS 👇 */}
+                <div className="mt-8 border-t border-gray-100 pt-6 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-200">
+                  <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mb-2 text-center">Zona de Peligro</p>
+                  <button 
+                    onClick={handleDeleteUser}
+                    className="w-full bg-white border-2 border-rose-100 text-rose-600 hover:text-white py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-rose-600 hover:border-rose-600 transition-all shadow-sm group"
+                  >
+                    <Trash2 size={18} className="group-hover:animate-bounce"/> Dar de Baja
+                  </button>
+                </div>
+
               </div>
             )}
 

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react'; 
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User, Calendar, Users, Briefcase } from 'lucide-react'; 
+import { LogOut, User, Calendar, Users, Briefcase, CreditCard, Wallet, LayoutDashboard } from 'lucide-react'; 
+
+// Importación de Componentes
 import UsersTable from '../components/UsersTable'; 
 import CoursesTable from '../components/CoursesTable';
 import StudentStats from '../components/StudentStats';
@@ -8,23 +10,19 @@ import MonthlyCalendar from '../components/MonthlyCalendar';
 import TeachersTable from '../components/TeachersTable';
 import UserProfile from '../components/UserProfile';
 import StudentPayments from '../components/StudentPayments';
-import { CreditCard } from 'lucide-react'; // Asegúrate de importar el ícono
+import FinancePage from '../components/FinancePage'; // Nuevo
+import TeacherDashboard from '../components/TeacherDashboard'; // Nuevo
+
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('home');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('user');
     return savedUser ? JSON.parse(savedUser) : null;
   });
-
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  // Al reservar, solo actualizamos el key para recargar StudentStats
-  const handleBookingDone = () => {
-    setRefreshKey(prev => prev + 1); 
-  };
 
   useEffect(() => {
     if (!user) navigate('/login');
@@ -37,6 +35,10 @@ const DashboardPage = () => {
     navigate('/login');
   };
 
+  const handleBookingDone = () => {
+    setRefreshKey(prev => prev + 1); 
+  };
+
   if (!user) return null;
 
   const displayName = user.name || "Usuario";
@@ -45,6 +47,7 @@ const DashboardPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex font-sans">
+      
       {/* SIDEBAR */}
       <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
         <div className="p-6 border-b border-gray-100">
@@ -52,6 +55,7 @@ const DashboardPage = () => {
         </div>
         
         <nav className="flex-1 p-4 space-y-2">
+          {/* Inicio (Para todos) */}
           <button 
             onClick={() => setActiveTab('home')}
             className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
@@ -61,6 +65,7 @@ const DashboardPage = () => {
             <Calendar size={20} /> Inicio
           </button>
 
+          {/* MENÚ EXCLUSIVO PARA ADMIN */}
           {userRole === 'ADMIN' && (
             <div className="pt-4 mt-4 border-t border-gray-100 space-y-1">
               <p className="px-4 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
@@ -75,33 +80,37 @@ const DashboardPage = () => {
               <button onClick={() => setActiveTab('teachers')} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${activeTab === 'teachers' ? 'bg-yellow-50 text-yellow-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}>
                 <Briefcase size={20} /> Profesores
               </button>
+              {/* 👇 Nuevo botón de Finanzas */}
+              <button onClick={() => setActiveTab('finances')} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${activeTab === 'finances' ? 'bg-yellow-50 text-yellow-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}>
+                <Wallet size={20} /> Finanzas
+              </button>
             </div>
           )}
 
-          {/* Pestaña: Pagos (SOLO ALUMNAS) */}
-            {userRole === 'ALUMNA' && (
-              <button 
-                onClick={() => setActiveTab('payments')}
-                className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === 'payments' ? 'bg-yellow-50 text-yellow-700' : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <CreditCard size={20} /> Mis Pagos
-              </button>
-            )}
+          {/* MENÚ EXCLUSIVO PARA ALUMNAS */}
+          {userRole === 'ALUMNA' && (
+            <button 
+              onClick={() => setActiveTab('payments')}
+              className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                activeTab === 'payments' ? 'bg-yellow-50 text-yellow-700' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <CreditCard size={20} /> Mis Pagos
+            </button>
+          )}
 
+          {/* Perfil (Para todos) */}
           <button 
             onClick={() => setActiveTab('profile')}
-            className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-              activeTab === 'profile' 
-                ? 'bg-yellow-50 text-yellow-700 shadow-sm' 
-                : 'text-gray-600 hover:bg-gray-50'
+            className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors mt-4 border-t border-gray-100 pt-4 ${
+              activeTab === 'profile' ? 'bg-yellow-50 text-yellow-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
             <User size={20} /> Mi Perfil
           </button>
         </nav>
 
+        {/* CERRAR SESIÓN */}
         <div className="p-4 border-t border-gray-100">
           <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors">
             <LogOut size={20} /> Cerrar Sesión
@@ -117,6 +126,8 @@ const DashboardPage = () => {
             {activeTab === 'users' && 'Gestión de Alumnas'}
             {activeTab === 'courses' && 'Catálogo de Clases'}
             {activeTab === 'teachers' && 'Cuerpo Docente'}
+            {activeTab === 'finances' && 'Contabilidad y Finanzas'}
+            {activeTab === 'profile' && 'Configuración de Perfil'}
           </h1>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-500">
@@ -129,15 +140,17 @@ const DashboardPage = () => {
         </header>
 
         <div className="p-8">
-          {/* VISTA: INICIO (HOME) */}
+          
+          {/* ======================================= */}
+          {/* VISTA: INICIO (HOME) DEPENDIENDO DEL ROL */}
+          {/* ======================================= */}
           {activeTab === 'home' && (
             <div className="space-y-8">
               
+              {/* VISTA HOME: ALUMNA */}
               {userRole === 'ALUMNA' && (
                 <>
-                  {/* Aquí delegamos la responsabilidad de la próxima cita a StudentStats */}
                   <StudentStats key={refreshKey} />
-                  
                   <section className="animate-in fade-in duration-700 delay-150">
                     <div className="mb-4">
                       <h2 className="text-xl font-bold text-gray-800">Calendario de Clases</h2>
@@ -148,21 +161,37 @@ const DashboardPage = () => {
                 </>
               )}
 
-              {userRole !== 'ALUMNA' && (
-                <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
-                  <h2 className="text-2xl font-serif italic mb-2 text-gray-900">¡Hola, {displayName}!</h2>
-                  <p className="text-gray-600">Bienvenido al sistema de gestión de Argos. Selecciona una opción en el menú lateral para comenzar.</p>
+              {/* 👇 VISTA HOME: MAESTRO */}
+              {userRole === 'MAESTRO' && (
+                <TeacherDashboard />
+              )}
+
+              {/* VISTA HOME: ADMIN */}
+              {userRole === 'ADMIN' && (
+                <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center h-[50vh]">
+                  <div className="w-20 h-20 bg-yellow-50 rounded-full flex items-center justify-center text-yellow-600 mb-6">
+                    <LayoutDashboard size={40} />
+                  </div>
+                  <h2 className="text-3xl font-serif italic mb-2 text-gray-900">¡Hola, {displayName}!</h2>
+                  <p className="text-gray-600 max-w-md mx-auto">
+                    Bienvenido al sistema administrativo de Argos. Utiliza el menú lateral para gestionar las alumnas, los horarios o revisar la contabilidad de la academia.
+                  </p>
                 </div>
               )}
             </div>
           )}
 
-          {/* VISTAS DE ADMIN */}
+          {/* ======================================= */}
+          {/* VISTAS EXCLUSIVAS                       */}
+          {/* ======================================= */}
           {activeTab === 'users' && userRole === 'ADMIN' && <UsersTable />}
           {activeTab === 'courses' && userRole === 'ADMIN' && <CoursesTable />}
           {activeTab === 'teachers' && userRole === 'ADMIN' && <TeachersTable />}
-          {activeTab === 'profile' && <UserProfile />}
+          {activeTab === 'finances' && userRole === 'ADMIN' && <FinancePage />} {/* 👇 Nuevo */}
+          
           {activeTab === 'payments' && userRole === 'ALUMNA' && <StudentPayments userId={user.id} />}
+          
+          {activeTab === 'profile' && <UserProfile />}
         </div>
       </main>
     </div>

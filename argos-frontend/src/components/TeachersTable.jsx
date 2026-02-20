@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   User, DollarSign, Plus, X, Briefcase, Copy, KeyRound, 
-  Pencil, Mail, ShieldCheck, History 
+  Pencil, Mail, ShieldCheck, History, Trash2 // 👈 Añadí Trash2
 } from 'lucide-react';
 
 const TeachersTable = () => {
@@ -10,7 +10,7 @@ const TeachersTable = () => {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
-  const [activeTab, setActiveTab] = useState('expediente'); // 'expediente' o 'nomina'
+  const [activeTab, setActiveTab] = useState('expediente'); 
 
   // 2. ESTADOS DE FORMULARIOS
   const [newTeacher, setNewTeacher] = useState({ 
@@ -61,7 +61,7 @@ const TeachersTable = () => {
     setEditData({
       name: teacher.name || '',
       email: teacher.email || '',
-      password: '', // Vacío por seguridad
+      password: '', 
       monthly_salary: teacher.monthly_salary || 0,
       role: teacher.role || 'MAESTRO'
     });
@@ -81,7 +81,7 @@ const TeachersTable = () => {
         alert("¡Staff registrado con éxito!");
         setShowCreate(false);
         setNewTeacher({ name: '', email: '', password: '', monthly_salary: 0, role: 'MAESTRO' });
-        fetchData(); // Recarga sin refrescar la página completa
+        fetchData(); 
       }
     } catch (err) { console.error(err); }
   };
@@ -102,13 +102,48 @@ const TeachersTable = () => {
     } catch (err) { console.error(err); }
   };
 
+  // =========================================
+  // 👇 NUEVO: HANDLER PARA ELIMINAR DOCENTE 👇
+  // =========================================
+  const handleDelete = async () => {
+    // Confirmación de seguridad nativa
+    const confirmDelete = window.confirm(`¿Estás seguro de que deseas eliminar permanentemente a ${selectedTeacher.name}? Todos sus registros se perderán.`);
+    if (!confirmDelete) return;
+
+    const token = localStorage.getItem('token');
+    try {
+      // Como estamos reutilizando la tabla de users, la ruta de delete ya la tienes en tu backend
+      const res = await fetch(`http://localhost:3000/api/users/${selectedTeacher.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (res.ok) {
+        alert("Expediente eliminado correctamente.");
+        fetchData(); // Recargamos la lista
+        setSelectedTeacher(null); // Cerramos el panel lateral
+      } else {
+        alert("No se pudo eliminar el expediente. Revisa la conexión.");
+      }
+    } catch (err) {
+      console.error("Error al eliminar:", err);
+    }
+  };
+
   const handleAddPayment = async () => {
     const token = localStorage.getItem('token');
     try {
+      // 👇 Forzamos a que el monto sea negativo porque es una salida de dinero
+      const expenseAmount = -Math.abs(Number(newPayment.amount));
+
       const res = await fetch('http://localhost:3000/api/users/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ user_id: selectedTeacher.id, ...newPayment })
+        body: JSON.stringify({ 
+          user_id: selectedTeacher.id, 
+          description: newPayment.description,
+          amount: expenseAmount // Mandamos el negativo a la BD
+        })
       });
       if (res.ok) {
         alert("Constancia de pago generada");
@@ -130,9 +165,7 @@ const TeachersTable = () => {
   return (
     <div className="flex flex-col lg:flex-row gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
-      {/* ========================================= */}
-      {/* 1. SECCIÓN PRINCIPAL: LISTA DE MAESTROS   */}
-      {/* ========================================= */}
+      {/* 1. SECCIÓN PRINCIPAL: LISTA DE MAESTROS */}
       <div className="flex-1">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -148,7 +181,7 @@ const TeachersTable = () => {
           </button>
         </div>
 
-        {/* FORMULARIO DE REGISTRO (Mantuve tu diseño original) */}
+        {/* FORMULARIO DE REGISTRO */}
         {showCreate && (
           <form onSubmit={handleCreate} className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 grid md:grid-cols-4 gap-6 mb-8 animate-in slide-in-from-top duration-300">
             <div className="space-y-1">
@@ -177,7 +210,7 @@ const TeachersTable = () => {
           </form>
         )}
 
-        {/* LISTADO DE STAFF (Tarjetas con botón de editar) */}
+        {/* LISTADO DE STAFF */}
         <div className="grid gap-4">
           {teachers.map(t => (
             <div key={t.id} className="bg-white p-6 rounded-2xl border border-gray-50 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group hover:border-argos-gold/50 transition-all">
@@ -214,9 +247,7 @@ const TeachersTable = () => {
         </div>
       </div>
 
-      {/* ========================================= */}
-      {/* 2. PANEL LATERAL: EDICIÓN Y NÓMINA        */}
-      {/* ========================================= */}
+      {/* 2. PANEL LATERAL: EDICIÓN Y NÓMINA */}
       {selectedTeacher && (
         <div className="w-full lg:w-[450px] bg-white border border-gray-100 rounded-3xl shadow-2xl animate-in slide-in-from-right duration-500 overflow-hidden flex flex-col max-h-[90vh]">
           
@@ -249,8 +280,8 @@ const TeachersTable = () => {
             
             {/* PESTAÑA: EXPEDIENTE (Edición) */}
             {activeTab === 'expediente' && (
-              <div className="space-y-6 animate-in fade-in duration-300">
-                <div className="space-y-4">
+              <div className="space-y-6 animate-in fade-in duration-300 flex flex-col h-full">
+                <div className="space-y-4 flex-1">
                   <div>
                     <label className="text-[10px] font-bold text-gray-500 block mb-1">Nombre Completo</label>
                     <div className="relative">
@@ -287,9 +318,22 @@ const TeachersTable = () => {
                   </div>
                 </div>
 
+                {/* BOTÓN DE ACTUALIZAR */}
                 <button onClick={handleUpdate} className="w-full bg-gray-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-argos-gold transition-all shadow-xl mt-4">
                   <ShieldCheck size={18}/> Actualizar Expediente
                 </button>
+
+                {/* 👇 NUEVA SECCIÓN: ZONA DE PELIGRO 👇 */}
+                <div className="mt-8 border-t border-gray-100 pt-6 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-200">
+                  <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mb-2 text-center">Zona de Peligro</p>
+                  <button 
+                    onClick={handleDelete}
+                    className="w-full bg-white border-2 border-rose-100 text-rose-600 hover:text-white py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-rose-600 hover:border-rose-600 transition-all shadow-sm group"
+                  >
+                    <Trash2 size={18} className="group-hover:animate-bounce"/> Eliminar Expediente
+                  </button>
+                </div>
+
               </div>
             )}
 
@@ -315,16 +359,17 @@ const TeachersTable = () => {
                     <p className="text-xs text-gray-400 italic text-center py-4">No hay pagos registrados para este maestro.</p>
                   ) : (
                     paymentHistory.map(pay => (
-                      <div key={pay.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
-                        <div>
-                          <p className="text-sm font-bold text-gray-900 leading-tight">{pay.description}</p>
-                          <p className="text-[10px] text-gray-400">{new Date(pay.payment_date).toLocaleDateString()}</p>
-                        </div>
-                        <div className="text-blue-600 font-bold text-sm">
-                          $ {pay.amount}
-                        </div>
+                    <div key={pay.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 leading-tight">{pay.description}</p>
+                        <p className="text-[10px] text-gray-400">{new Date(pay.payment_date).toLocaleDateString()}</p>
                       </div>
-                    ))
+                      {/* 👇 Aquí aplicamos el color rojo y el formato de Gasto 👇 */}
+                      <div className="text-rose-600 font-bold text-sm bg-rose-50 px-3 py-1 rounded-lg">
+                        - ${Math.abs(pay.amount)}
+                      </div>
+                    </div>
+                  ))
                   )}
                 </div>
               </div>

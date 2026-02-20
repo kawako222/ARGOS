@@ -96,14 +96,34 @@ const updateUser = async (req, res) => {
 
 // 4. ELIMINAR USUARIO
 const deleteUser = async (req, res) => {
-  const { id } = req.params;
-  if (req.user.role !== 'ADMIN') return res.status(403).json({ error: "Sin permiso" });
-
+  const userId = req.params.id;
+  console.log(`\n🗑️ INICIANDO PROTOCOLO DE BORRADO PARA ID: ${userId}`);
+  
   try {
-    await pool.query('DELETE FROM users WHERE id = $1', [id]);
-    res.json({ message: "Usuario eliminado" });
+    // PASO 1: Desvincular al maestro de sus clases 
+    // (Actualizamos las clases para que queden sin maestro temporalmente en lugar de borrarlas)
+    console.log("Paso 1: Desvinculando de la tabla 'courses'...");
+    await pool.query('UPDATE courses SET teacher_id = NULL WHERE teacher_id = $1', [userId]);
+
+    // PASO 2: Borramos su historial de nómina/pagos
+    console.log("Paso 2: Borrando de la tabla 'payments'...");
+    await pool.query('DELETE FROM payments WHERE user_id = $1', [userId]);
+
+    // PASO 3: Ahora sí, la base de datos nos dejará borrar el expediente
+    console.log("Paso 3: Borrando de la tabla 'users'...");
+    const result = await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    console.log("✅ Expediente eliminado exitosamente.");
+    res.status(200).json({ message: 'Expediente eliminado correctamente' });
+
   } catch (error) {
-    res.status(500).json({ error: "Error al eliminar" });
+    console.error("\n🔥🔥 ERROR CRÍTICO AL BORRAR 🔥🔥");
+    console.error("Motivo exacto de PostgreSQL:", error.message);
+    res.status(500).json({ error: 'Error interno al intentar eliminar el expediente' });
   }
 };
 
@@ -161,4 +181,82 @@ const getPaymentsByUser = async (req, res) => {
   }
 };
 
-module.exports = { getAllUsers, registerUser, updateUser, deleteUser, getMe, createPayment, getPaymentsByUser };
+// ==========================================
+// FUNCIONES FINANCIERAS (Añadir a userController.js)
+// ==========================================
+
+// 8. Obtener TODOS los pagos de todas las alumnas
+const getAllPayments = async (req, res) => {
+  try {
+    // Asegúrate de que los nombres de las columnas coincidan con tu base de datos
+    const result = await pool.query('SELECT * FROM payments ORDER BY payment_date DESC');
+    res.json(result.rows); // En Postgres, los datos vienen dentro de .rows
+  } catch (error) {
+    console.error("Error obteniendo todos los pagos:", error);
+    res.status(500).json({ error: 'Error al obtener pagos' });
+  }
+};
+
+// 9. Obtener TODOS los gastos
+const getAllExpenses = async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM expenses ORDER BY date DESC');
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error obteniendo gastos:", error);
+    res.status(500).json({ error: 'Error al obtener gastos' });
+  }
+};
+
+// 10. Crear un nuevo gasto (Viene del modal)
+const createExpense = async (req, res) => {
+  const { amount, description, category, date } = req.body;
+  try {
+    // Usamos $1, $2... para evitar inyecciones SQL en Postgres
+    const result = await pool.query(
+      'INSERT INTO expenses (amount, description, category, date) VALUES ($1, $2, $3, $4) RETURNING *',
+      [amount, description, category, date]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("Error creando gasto:", error);
+    res.status(500).json({ error: 'Error al registrar el gasto' });
+  }
+};
+// Función para borrar PAGO
+const deletePayment = async (req, res) => {
+  try {
+    await pool.query('DELETE FROM payments WHERE id = $1', [req.params.id]);
+    res.status(200).json({ message: 'Pago eliminado' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al eliminar pago' });
+  }
+};
+
+// Función para borrar GASTO
+const deleteExpense = async (req, res) => {
+  try {
+    await pool.query('DELETE FROM expenses WHERE id = $1', [req.params.id]);
+    res.status(200).json({ message: 'Gasto eliminado' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al eliminar gasto' });
+  }
+};
+
+
+
+module.exports = {
+  registerUser,
+  getAllUsers,
+  getMe,
+  updateUser,
+  deleteUser,
+  getPaymentsByUser,
+  createPayment,
+  // 👇 ASEGÚRATE DE AGREGAR ESTAS 3 👇
+  getAllPayments,
+  getAllExpenses,
+  createExpense,
+  deletePayment,
+  deleteExpense
+};
